@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İstanbul Macerası: Kelime Oyunu</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .game-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        /* Resim Stili */
+        .level-image {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 5px solid #2a5298;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+            background-color: #eee; /* Resim yüklenene kadar gri arka plan */
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .story-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            background: #f0f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #2a5298;
+            text-align: left;
+        }
+
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #2a5298;
+        }
+
+        .btn {
+            background-color: #2a5298;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #1e3c72;
+        }
+
+        .hint-btn {
+            background-color: #f39c12;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            display: block;
+            margin: 10px auto;
+        }
+        
+        .hint-text {
+            display: none;
+            color: #d35400;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #e0e0e0;
+            height: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .feedback {
+            margin-top: 10px;
+            font-weight: bold;
+            height: 20px;
+        }
+
+        .success { color: #27ae60; }
+        .error { color: #c0392b; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container" id="game-screen">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+        
+        <img src="" alt="Soru Görseli" class="level-image" id="level-img">
+        
+        <h1>Kelime Avı</h1>
+        <p class="story-text" id="story">Yükleniyor...</p>
+
+        <input type="text" id="user-input" placeholder="Cevabınız..." autocomplete="off">
+        <br>
+        <button class="btn" onclick="checkAnswer()">Kontrol Et</button>
+        <button class="btn hint-btn" onclick="showHint()">💡 İpucu Al</button>
+        <p class="hint-text" id="hint-msg"></p>
+        <p class="feedback" id="feedback"></p>
+    </div>
+
+    <div class="game-container hidden" id="end-screen">
+        <img src="https://images.unsplash.com/photo-1622587853578-dd1bf9608d26?auto=format&fit=crop&w=400&q=80" class="level-image" alt="İstanbul Manzara">
+        <h1>Tebrikler!</h1>
+        <p>Hikayeyi tamamladın ve İstanbul'daki hayatına hazırsın.</p>
+        <p>Bulduğun Kelimeler:</p>
+        <ul style="text-align:left; list-style-type: circle; padding-left: 40px;">
+            <li>İstanbul</li>
+            <li>Yabancı</li>
+            <li>Türkçe</li>
+            <li>Şehir</li>
+            <li>Üniversite</li>
+            <li>Öğrenci</li>
+            <li>Arkadaş</li>
+        </ul>
+        <button class="btn" onclick="location.reload()">Tekrar Oyna</button>
+    </div>
+
+    <script>
+        // OYUN VERİLERİ (GÜNCELLENMİŞ GÖRSELLER)
+        const levels = [
+            {
+                // İstanbul Boğazı
+                image: "https://images.unsplash.com/photo-1527838832700-5059252407fa?auto=format&fit=crop&w=400&q=80", 
+                text: "Uçağın tekerlekleri yere değdi. Pencereden dışarı baktığında Asya ve Avrupa'yı birbirine bağlayan o eşsiz boğazı ve köprüleri gördün. Hangi şehirdesin?",
+                answer: "İSTANBUL",
+                hint: "Türkiye'nin en kalabalık kenti."
+            },
+            {
+                // Turist ve Harita (Güncellendi)
+                image: "https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=400&q=80", 
+                text: "Pasaport kontrolüne geldin. Memur pasaportuna baktı. Sen bu ülkenin vatandaşı değilsin, sen bir...",
+                answer: "YABANCI",
+                hint: "Turist veya misafir, yerli olmayan."
+            },
+            {
+                // Türkçe Konuşma
+                image: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?auto=format&fit=crop&w=400&q=80", 
+                text: "Havalimanından çıktın. Taksiciyle konuşmak istiyorsun. İnsanlarla anlaşmak için bu dersini aldığın dili konuşmalısın. Hangi dil?",
+                answer: "TÜRKÇE",
+                hint: "Türkiye'de konuşulan dil."
+            },
+            {
+                // Şehir Merkezi
+                image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=400&q=80", 
+                text: "Taksiyle merkeze gidiyorsun. Etraf çok kalabalık, binalar yüksek, trafik yoğun. Burası küçük bir köy değil, burası büyük bir...",
+                answer: "ŞEHİR",
+                hint: "Kent."
+            },
+            {
+                // Öğrenci - Ders Çalışan (Güncellendi ve düzeltildi)
+                image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=400&q=80", 
+                text: "Sonunda kalacağın yurda yerleştin ve asıl amacına odaklandın. Buraya okumaya, ders çalışmaya geldin. Senin unvanın ne?",
+                answer: "ÖĞRENCİ",
+                hint: "Okula giden kişi, talebe."
+            },
+            {
+                // Üniversite Binası
+                image: "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=400&q=80", 
+                text: "Sabah oldu. Çantanı aldın ve kampüse gittin. Profesörlerin, amfillerin ve kütüphanenin olduğu o büyük eğitim kurumuna girdin. Neresi burası?",
+                answer: "ÜNİVERSİTE",
+                hint: "Liseden sonra gidilen yüksek eğitim kurumu."
+            },
+            {
+                // Arkadaşlar
+                image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=400&q=80", 
+                text: "Kantinde otururken yanına biri geldi ve notlarını seninle paylaştı. Sohbet ettiniz ve çok iyi anlaştınız. Artık o senin bir...",
+                answer: "ARKADAŞ",
+                hint: "Dost."
+            }
+        ];
+
+        let currentLevel = 0;
+
+        function loadLevel() {
+            if (currentLevel >= levels.length) {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('end-screen').classList.remove('hidden');
+                return;
+            }
+
+            const level = levels[currentLevel];
+            
+            document.getElementById('level-img').src = level.image;
+            document.getElementById('story').innerText = level.text;
+            document.getElementById('user-input').value = "";
+            document.getElementById('feedback').innerText = "";
+            document.getElementById('hint-msg').style.display = "none";
+            document.getElementById('hint-msg').innerText = level.hint;
+            
+            const percentage = (currentLevel / levels.length) * 100;
+            document.getElementById('progress').style.width = percentage + "%";
+            
+            document.getElementById('user-input').focus();
+        }
+
+        function checkAnswer() {
+            const input = document.getElementById('user-input').value;
+            const feedback = document.getElementById('feedback');
+            
+            const cleanInput = input.toLocaleUpperCase('tr-TR').trim();
+            const correct = levels[currentLevel].answer;
+
+            if (cleanInput === correct) {
+                feedback.className = "feedback success";
+                feedback.innerText = "Doğru! Harikasın 🎉";
+                currentLevel++;
+                setTimeout(loadLevel, 1500);
+            } else {
+                feedback.className = "feedback error";
+                feedback.innerText = "Yanlış cevap, tekrar dene!";
+                shakeInput();
+            }
+        }
+
+        function showHint() {
+            document.getElementById('hint-msg').style.display = "block";
+        }
+
+        function shakeInput() {
+            const input = document.getElementById('user-input');
+            input.style.border = "2px solid red";
+            setTimeout(() => {
+                input.style.border = "2px solid #ccc";
+            }, 500);
+        }
+
+        document.getElementById("user-input").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                checkAnswer();
+            }
+        });
+
+        loadLevel();
+
+    </script>
+</body>
+</html>
